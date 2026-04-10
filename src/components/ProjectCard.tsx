@@ -7,11 +7,15 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Project } from '../types/types';
+import { Project, Expense } from '../types/types';
 import { Colors, Spacing, FontSizes, BorderRadius, Shadow } from '../constants/theme';
+import BudgetProgressBar from './BudgetProgressBar';
+import { useExpenseTotal, calculateBudgetPercentage } from '../hooks/useExpenseTotal';
 
 interface ProjectCardProps {
   project: Project;
+  /** Expenses belonging to this project (used for budget progress) */
+  expenses?: Expense[];
 }
 
 /**
@@ -30,24 +34,10 @@ const getStatusStyle = (status: Project['status']) => {
   }
 };
 
-/**
- * Computes progress (0–1) based on start/end dates relative to today.
- */
-const computeProgress = (startDate: string, endDate: string): number => {
-  const start = new Date(startDate).getTime();
-  const end = new Date(endDate).getTime();
-  const now = Date.now();
-  if (end <= start) return 1;
-  const progress = (now - start) / (end - start);
-  return Math.min(Math.max(progress, 0), 1);
-};
-
-export default function ProjectCard({ project }: ProjectCardProps) {
+export default function ProjectCard({ project, expenses = [] }: ProjectCardProps) {
   const router = useRouter();
   const statusStyle = getStatusStyle(project.status);
-  const progress = project.status === 'Completed'
-    ? 1
-    : computeProgress(project.startDate, project.endDate);
+  const totalSpent = useExpenseTotal(expenses);
 
   const handlePress = () => {
     router.push({ pathname: '/project/[id]', params: { id: project.id } } as any);
@@ -100,26 +90,11 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         </Text>
       </View>
 
-      {/* Progress bar */}
-      <View style={styles.progressContainer}>
-        <View style={styles.progressTrack}>
-          <View
-            style={[
-              styles.progressFill,
-              {
-                width: `${Math.round(progress * 100)}%`,
-                backgroundColor:
-                  project.status === 'Completed'
-                    ? Colors.statusCompleted
-                    : project.status === 'On Hold'
-                    ? Colors.statusOnHold
-                    : Colors.statusActive,
-              },
-            ]}
-          />
-        </View>
-        <Text style={styles.progressText}>{Math.round(progress * 100)}%</Text>
-      </View>
+      {/* Budget progress bar — reflects actual spending */}
+      <BudgetProgressBar
+        spent={totalSpent}
+        budget={project.budget ?? 0}
+      />
     </TouchableOpacity>
   );
 }
@@ -184,28 +159,5 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: FontSizes.xs,
     color: Colors.textTertiary,
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  progressTrack: {
-    flex: 1,
-    height: 6,
-    backgroundColor: Colors.searchBar,
-    borderRadius: BorderRadius.full,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: BorderRadius.full,
-  },
-  progressText: {
-    fontSize: FontSizes.xs,
-    color: Colors.textSecondary,
-    fontWeight: '600',
-    width: 32,
-    textAlign: 'right',
   },
 });

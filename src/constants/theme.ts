@@ -68,17 +68,20 @@ export const BorderRadius = {
 
 export const Shadow = {
   card: {
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    // shadowColor: Colors.shadow,
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.06,
+    // shadowRadius: 8,
+    // elevation: 3,
+    boxShadow: '0px 2px 3.84px rgba(0, 0, 0, 0.25)',
+
   },
   cardHover: {
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
+    // shadowColor: Colors.shadow,
+    // shadowOffset: { width: 0, height: 4 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 12,
+    // elevation: 5,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)'
   },
 };

@@ -12,6 +12,7 @@ import {
     View,
 } from 'react-native';
 import ExpenseCard from '../../components/ExpenseCard';
+import BudgetProgressBar from '../../components/BudgetProgressBar';
 import {
     BorderRadius,
     Colors,
@@ -135,26 +136,12 @@ export default function ProjectDetailScreen() {
             </View>
           </View>
 
-          {/* Mini progress bar */}
-          <View style={styles.budgetProgressTrack}>
-            <View
-              style={[
-                styles.budgetProgressFill,
-                {
-                  width: `${Math.min(
-                    Math.round(
-                      (totalExpenses / Math.max(project.budget ?? 1, 1)) * 100
-                    ),
-                    100
-                  )}%`,
-                  backgroundColor:
-                    totalExpenses > (project.budget ?? 0)
-                      ? '#EF4444'
-                      : Colors.primary,
-                },
-              ]}
-            />
-          </View>
+          {/* Budget progress bar */}
+          <BudgetProgressBar
+            spent={totalExpenses}
+            budget={project.budget ?? 0}
+            showLegend
+          />
         </View>
       )}
 
@@ -191,8 +178,10 @@ export default function ProjectDetailScreen() {
         style={styles.fab}
         activeOpacity={0.85}
         onPress={() => {
-          // TODO: Navigate to Add Expense screen
-          console.log('Add expense for project:', id);
+          router.push({
+            pathname: '/project/add-expense',
+            params: { projectId: id },
+          } as any);
         }}
       >
         <Ionicons name="add" size={28} color={Colors.white} />
@@ -274,14 +263,10 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   budgetProgressTrack: {
-    height: 5,
-    backgroundColor: Colors.searchBar,
-    borderRadius: BorderRadius.full,
-    overflow: 'hidden',
+    // Removed — now using BudgetProgressBar component
   },
   budgetProgressFill: {
-    height: '100%',
-    borderRadius: BorderRadius.full,
+    // Removed — now using BudgetProgressBar component
   },
 
   // List

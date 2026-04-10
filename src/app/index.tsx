@@ -19,8 +19,8 @@ import {
   Shadow,
   Spacing,
 } from '../constants/theme';
-import { getProjects } from '../services/expenseService';
-import { Project } from '../types/types';
+import { getProjects, getExpenses } from '../services/expenseService';
+import { Project, Expense } from '../types/types';
 
 type FilterTab = 'ALL' | 'ACTIVE' | 'COMPLETED' | 'ON HOLD';
 
@@ -28,24 +28,29 @@ const FILTER_TABS: FilterTab[] = ['ALL', 'ACTIVE', 'COMPLETED', 'ON HOLD'];
 
 export default function HomeScreen() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<FilterTab>('ALL');
 
   // ---------- Fetch projects ----------
   useEffect(() => {
-    const fetchProjects = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await getProjects();
-        setProjects(data as Project[]);
+        const [projectsData, expensesData] = await Promise.all([
+          getProjects(),
+          getExpenses(),
+        ]);
+        setProjects(projectsData as Project[]);
+        setAllExpenses(expensesData as Expense[]);
       } catch (err) {
-        console.error('Failed to fetch projects:', err);
+        console.error('Failed to fetch data:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchProjects();
+    fetchData();
   }, []);
 
   // ---------- Filtered list ----------
@@ -149,7 +154,12 @@ export default function HomeScreen() {
         <FlatList
           data={filteredProjects}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <ProjectCard project={item} />}
+          renderItem={({ item }) => (
+            <ProjectCard
+              project={item}
+              expenses={allExpenses.filter((e) => e.projectId === item.id)}
+            />
+          )}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
         />
