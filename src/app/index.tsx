@@ -1,26 +1,26 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
+  ActivityIndicator,
   FlatList,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator,
-  SafeAreaView,
-  Platform,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { getProjects } from '../services/testConnection';
-import { Project } from '../types/types';
 import ProjectCard from '../components/ProjectCard';
 import {
-  Colors,
-  Spacing,
-  FontSizes,
   BorderRadius,
+  Colors,
+  FontSizes,
   Shadow,
+  Spacing,
 } from '../constants/theme';
+import { getProjects } from '../services/expenseService';
+import { Project } from '../types/types';
 
 type FilterTab = 'ALL' | 'ACTIVE' | 'COMPLETED' | 'ON HOLD';
 
@@ -89,7 +89,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       {/* -------- HEADER -------- */}
       <View style={styles.header}>
-        <Text style={styles.greeting}>{greeting}, User 👋</Text>
+        <Text style={styles.greeting}>{greeting}, Lê Minh Thành</Text>
         <Text style={styles.title}>Dashboard</Text>
       </View>
 

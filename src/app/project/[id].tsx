@@ -1,26 +1,26 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  SafeAreaView,
-  Platform,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { getProjects, getExpenses } from '../../services/testConnection';
-import { Project, Expense } from '../../types/types';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+    ActivityIndicator,
+    FlatList,
+    Platform,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import ExpenseCard from '../../components/ExpenseCard';
 import {
-  Colors,
-  Spacing,
-  FontSizes,
-  BorderRadius,
-  Shadow,
+    BorderRadius,
+    Colors,
+    FontSizes,
+    Shadow,
+    Spacing,
 } from '../../constants/theme';
+import { getExpenses, getProjects } from '../../services/expenseService';
+import { Expense, Project } from '../../types/types';
 
 export default function ProjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
