@@ -19,8 +19,10 @@ import {
   Shadow,
   Spacing,
 } from '../constants/theme';
-import { getProjects, getExpenses } from '../services/expenseService';
-import { Project, Expense } from '../types/types';
+import { getExpenses, getProjects } from '../services/expenseService';
+import type { ExpenseStore } from '../services/expenseStore';
+import { useExpenseStore } from '../services/expenseStore';
+import { Expense, Project } from '../types/types';
 
 type FilterTab = 'ALL' | 'ACTIVE' | 'COMPLETED' | 'ON HOLD';
 
@@ -28,12 +30,15 @@ const FILTER_TABS: FilterTab[] = ['ALL', 'ACTIVE', 'COMPLETED', 'ON HOLD'];
 
 export default function HomeScreen() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<FilterTab>('ALL');
 
-  // ---------- Fetch projects ----------
+  // Get expenses from Zustand store
+  const allExpenses = useExpenseStore((state: ExpenseStore) => state.allExpenses);
+  const setExpenses = useExpenseStore((state: ExpenseStore) => state.setExpenses);
+
+  // ---------- Fetch projects + initialize expenses on app start ----------
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -43,7 +48,10 @@ export default function HomeScreen() {
           getExpenses(),
         ]);
         setProjects(projectsData as Project[]);
-        setAllExpenses(expensesData as Expense[]);
+
+        // Initialize Zustand store with all expenses from Firebase
+        // After this, the store is the single source of truth
+        setExpenses(expensesData as Expense[]);
       } catch (err) {
         console.error('Failed to fetch data:', err);
       } finally {
@@ -51,7 +59,7 @@ export default function HomeScreen() {
       }
     };
     fetchData();
-  }, []);
+  }, [setExpenses]);
 
   // ---------- Filtered list ----------
   const filteredProjects = useMemo(() => {
@@ -157,7 +165,7 @@ export default function HomeScreen() {
           renderItem={({ item }) => (
             <ProjectCard
               project={item}
-              expenses={allExpenses.filter((e) => e.projectId === item.id)}
+              expenses={allExpenses.filter((e: Expense) => e.projectId === item.id)}
             />
           )}
           contentContainerStyle={styles.listContent}

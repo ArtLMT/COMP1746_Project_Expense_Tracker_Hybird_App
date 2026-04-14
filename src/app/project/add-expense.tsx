@@ -1,34 +1,50 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import {
-  SafeAreaView,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Platform,
-  Alert,
+    Alert,
+    Platform,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import AddExpenseForm from '../../components/AddExpenseForm';
-import { saveExpense } from '../../services/expenseService';
-import { Expense } from '../../types/types';
 import {
-  Colors,
-  Spacing,
-  FontSizes,
-  Shadow,
+    Colors,
+    FontSizes,
+    Shadow,
+    Spacing,
 } from '../../constants/theme';
+import { saveExpense } from '../../services/expenseService';
+import type { ExpenseStore } from '../../services/expenseStore';
+import { useExpenseStore } from '../../services/expenseStore';
+import { Expense } from '../../types/types';
 
 export default function AddExpenseScreen() {
   const { projectId } = useLocalSearchParams<{ projectId: string }>();
   const router = useRouter();
+  const addExpenseToStore = useExpenseStore((state: ExpenseStore) => state.addExpense);
 
   const handleSave = async (expense: Expense) => {
-    await saveExpense(expense);
-    Alert.alert('Success', 'Expense saved successfully!', [
-      { text: 'OK', onPress: () => router.back() },
-    ]);
+    try {
+      // Save to Firebase
+      await saveExpense(expense);
+
+      // Update Zustand store with the new expense (optimistic update already completed)
+      addExpenseToStore(expense);
+
+      // Auto-navigate back to project screen
+      router.back();
+    } catch (err) {
+      console.error('Failed to save expense:', err);
+      Alert.alert(
+        'Error',
+        'Failed to save expense. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   const handleCancel = () => {

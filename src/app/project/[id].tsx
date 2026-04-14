@@ -11,8 +11,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import ExpenseCard from '../../components/ExpenseCard';
 import BudgetProgressBar from '../../components/BudgetProgressBar';
+import ExpenseCard from '../../components/ExpenseCard';
 import {
     BorderRadius,
     Colors,
@@ -21,6 +21,8 @@ import {
     Spacing,
 } from '../../constants/theme';
 import { getExpenses, getProjects } from '../../services/expenseService';
+import type { ExpenseStore } from '../../services/expenseStore';
+import { useExpenseStore } from '../../services/expenseStore';
 import { Expense, Project } from '../../types/types';
 
 export default function ProjectDetailScreen() {
@@ -28,10 +30,19 @@ export default function ProjectDetailScreen() {
   const router = useRouter();
 
   const [project, setProject] = useState<Project | null>(null);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ---------- Fetch project + expenses ----------
+  // Get expenses from Zustand store
+  const allExpenses = useExpenseStore((state: ExpenseStore) => state.allExpenses);
+  const setExpenses = useExpenseStore((state: ExpenseStore) => state.setExpenses);
+
+  // Filter expenses for this project from Zustand
+  const expenses = useMemo(
+    () => allExpenses.filter((e) => e.projectId === id),
+    [allExpenses, id]
+  );
+
+  // ---------- Fetch project + initialize expenses ----------
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -47,11 +58,9 @@ export default function ProjectDetailScreen() {
         );
         setProject(currentProject ?? null);
 
-        // Filter expenses for this project
-        const filtered = (expensesData as Expense[]).filter(
-          (e) => e.projectId === id
-        );
-        setExpenses(filtered);
+        // Initialize Zustand store with all expenses (only once on first load)
+        // After this, all updates come through the store (no re-fetching)
+        setExpenses(expensesData as Expense[]);
       } catch (err) {
         console.error('Failed to fetch data:', err);
       } finally {
@@ -60,7 +69,7 @@ export default function ProjectDetailScreen() {
     };
 
     fetchData();
-  }, [id]);
+  }, [id, setExpenses]);
 
   // ---------- Summary ----------
   const totalExpenses = useMemo(
