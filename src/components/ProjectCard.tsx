@@ -18,9 +18,7 @@ interface ProjectCardProps {
   expenses?: Expense[];
 }
 
-/**
- * Returns color and background for a project status badge.
- */
+
 const getStatusStyle = (status: Project['status']) => {
   switch (status) {
     case 'Active':

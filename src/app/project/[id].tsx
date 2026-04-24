@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -20,9 +20,7 @@ import {
     Shadow,
     Spacing,
 } from '../../constants/theme';
-import { getExpenses, getProjects } from '../../services/expenseService';
-import type { ExpenseStore } from '../../services/expenseStore';
-import { useExpenseStore } from '../../services/expenseStore';
+import { getActiveExpensesByProject, getActiveProjects } from '../../services/firestoreService';
 import { Expense, Project } from '../../types/types';
 
 export default function ProjectDetailScreen() {
@@ -30,57 +28,54 @@ export default function ProjectDetailScreen() {
   const router = useRouter();
 
   const [project, setProject] = useState<Project | null>(null);
+  // Local expense state — intentionally NOT stored in Zustand so we never
+  // overwrite the global store (which index.tsx uses for all projects).
+  const [expenses, setLocalExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Get expenses from Zustand store
-  const allExpenses = useExpenseStore((state: ExpenseStore) => state.allExpenses);
-  const setExpenses = useExpenseStore((state: ExpenseStore) => state.setExpenses);
+  // useFocusEffect re-runs every time this screen comes into focus,
+  // so the list automatically refreshes after the user adds an expense
+  // and navigates back from add-expense.tsx.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true; // prevent setState on unmounted/unfocused screen
 
-  // Filter expenses for this project from Zustand
-  const expenses = useMemo(
-    () => allExpenses.filter((e) => e.projectId === id),
-    [allExpenses, id]
+      const fetchData = async () => {
+        try {
+          setLoading(true);
+          const [projectsData, expensesData] = await Promise.all([
+            getActiveProjects(),
+            getActiveExpensesByProject(id),
+          ]);
+
+          if (!active) return;
+
+          const currentProject = projectsData.find((p) => p.id === id);
+          setProject(currentProject ?? null);
+          // Store expenses in LOCAL state only — never replaces the global store
+          setLocalExpenses(expensesData);
+        } catch (err) {
+          console.error('Failed to fetch project data:', err);
+        } finally {
+          if (active) setLoading(false);
+        }
+      };
+
+      fetchData();
+
+      // Cleanup: if screen loses focus before fetch completes, ignore the result
+      return () => { active = false; };
+    }, [id])
   );
 
-  // ---------- Fetch project + initialize expenses ----------
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [projectsData, expensesData] = await Promise.all([
-          getProjects(),
-          getExpenses(),
-        ]);
-
-        // Find current project
-        const currentProject = (projectsData as Project[]).find(
-          (p) => p.id === id
-        );
-        setProject(currentProject ?? null);
-
-        // Initialize Zustand store with all expenses (only once on first load)
-        // After this, all updates come through the store (no re-fetching)
-        setExpenses(expensesData as Expense[]);
-      } catch (err) {
-        console.error('Failed to fetch data:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [id, setExpenses]);
-
-  // ---------- Summary ----------
   const totalExpenses = useMemo(
     () => expenses.reduce((sum, e) => sum + (e.amount ?? 0), 0),
     [expenses]
   );
 
-  // ---------- Render ----------
   return (
     <SafeAreaView style={styles.container}>
-      {/* -------- HEADER -------- */}
+      {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -102,7 +97,7 @@ export default function ProjectDetailScreen() {
         <View style={{ width: 36 }} />
       </View>
 
-      {/* -------- BUDGET SUMMARY CARD -------- */}
+      {/* BUDGET SUMMARY CARD */}
       {project && (
         <View style={styles.summaryCard}>
           <View style={styles.summaryRow}>
@@ -154,7 +149,7 @@ export default function ProjectDetailScreen() {
         </View>
       )}
 
-      {/* -------- EXPENSE LIST -------- */}
+      {/* EXPENSE LIST */}
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={Colors.primary} />
@@ -182,7 +177,7 @@ export default function ProjectDetailScreen() {
         />
       )}
 
-      {/* -------- FAB -------- */}
+      {/* FAB */}
       <TouchableOpacity
         style={styles.fab}
         activeOpacity={0.85}

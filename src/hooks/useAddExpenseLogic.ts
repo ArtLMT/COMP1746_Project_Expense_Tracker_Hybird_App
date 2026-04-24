@@ -85,7 +85,7 @@ export const useAddExpenseLogic = ({
   onSave,
   onCancel,
 }: UseAddExpenseLogicProps): UseAddExpenseLogicReturn => {
-  // ──────── State ────────
+  // State
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [amount, setAmount] = useState('');
@@ -97,7 +97,7 @@ export const useAddExpenseLogic = ({
   const [errors, setErrors] = useState<FormErrors>({});
   const [saving, setSaving] = useState(false);
 
-  // ──────── Handlers ────────
+  // Handlers
   const onDateChange = (
     _event: DateTimePickerEvent,
     selectedDate?: Date
@@ -106,7 +106,7 @@ export const useAddExpenseLogic = ({
     if (selectedDate) setDate(selectedDate);
   };
 
-  // ──────── Validation ────────
+  // Validation
   const validate = useCallback((): boolean => {
     const newErrors: FormErrors = {};
 
@@ -125,12 +125,12 @@ export const useAddExpenseLogic = ({
     return Object.keys(newErrors).length === 0;
   }, [amount, currency, type, paymentMethod, claimant, status]);
 
-  // ──────── Clear Errors ────────
+  // Clear Errors
   const clearErrors = useCallback(() => {
     setErrors({});
   }, []);
 
-  // ──────── Form Submission ────────
+  // Form Submission
   const handleSubmit = async () => {
     if (!validate()) return;
 
@@ -146,6 +146,8 @@ export const useAddExpenseLogic = ({
         paymentMethod,
         claimant: claimant.trim(),
         status,
+        isDeleted: false,
+        updated_at: Date.now(),
       };
 
       await onSave(expense);

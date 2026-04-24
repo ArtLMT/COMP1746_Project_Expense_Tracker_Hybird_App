@@ -1,8 +1,9 @@
-/**
- * Firestore data model interfaces.
- */
+export interface SyncMetadata {
+  isDeleted: boolean;
+  updated_at: number;
+}
 
-export interface Project {
+export interface Project extends SyncMetadata {
   id: string;
   name: string;
   description: string;
@@ -13,7 +14,7 @@ export interface Project {
   budget: number;
 }
 
-export interface Expense {
+export interface Expense extends SyncMetadata {
   id: string;
   projectId: string;
   date: string;
@@ -24,3 +25,4 @@ export interface Expense {
   claimant: string;
   status: 'Paid' | 'Pending' | 'Reimbursed';
 }
+

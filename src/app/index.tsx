@@ -19,7 +19,7 @@ import {
   Shadow,
   Spacing,
 } from '../constants/theme';
-import { getExpenses, getProjects } from '../services/expenseService';
+import { getActiveDocuments, getActiveProjects } from '../services/firestoreService';
 import type { ExpenseStore } from '../services/expenseStore';
 import { useExpenseStore } from '../services/expenseStore';
 import { Expense, Project } from '../types/types';
@@ -38,20 +38,20 @@ export default function HomeScreen() {
   const allExpenses = useExpenseStore((state: ExpenseStore) => state.allExpenses);
   const setExpenses = useExpenseStore((state: ExpenseStore) => state.setExpenses);
 
-  // ---------- Fetch projects + initialize expenses on app start ----------
+  //  Fetch projects + initialize expenses on app start 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         const [projectsData, expensesData] = await Promise.all([
-          getProjects(),
-          getExpenses(),
+          getActiveProjects(),
+          getActiveDocuments<Expense>('expenses'),
         ]);
-        setProjects(projectsData as Project[]);
+        setProjects(projectsData);
 
-        // Initialize Zustand store with all expenses from Firebase
-        // After this, the store is the single source of truth
-        setExpenses(expensesData as Expense[]);
+        // Initialize Zustand store with all active expenses from Firestore
+        // setExpenses() also filters isDeleted as a safety net
+        setExpenses(expensesData);
       } catch (err) {
         console.error('Failed to fetch data:', err);
       } finally {
@@ -61,7 +61,7 @@ export default function HomeScreen() {
     fetchData();
   }, [setExpenses]);
 
-  // ---------- Filtered list ----------
+  //  Filtered list 
   const filteredProjects = useMemo(() => {
     let filtered = projects;
 
@@ -89,7 +89,7 @@ export default function HomeScreen() {
     return filtered;
   }, [projects, activeTab, searchQuery]);
 
-  // ---------- Greeting based on time ----------
+  //Greeting based on time 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -97,16 +97,16 @@ export default function HomeScreen() {
     return 'Good evening';
   }, []);
 
-  // ---------- Render ----------
+  //  Render 
   return (
     <SafeAreaView style={styles.container}>
-      {/* -------- HEADER -------- */}
+      {/* HEADER */}
       <View style={styles.header}>
         <Text style={styles.greeting}>{greeting}, Lê Minh Thành</Text>
         <Text style={styles.title}>Dashboard</Text>
       </View>
 
-      {/* -------- SEARCH BAR -------- */}
+      {/* SEARCH BAR */}
       <View style={styles.searchContainer}>
         <Ionicons
           name="search-outline"
@@ -128,7 +128,7 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* -------- FILTER TABS -------- */}
+      {/* FILTER TABS */}
       <View style={styles.tabsContainer}>
         {FILTER_TABS.map((tab) => {
           const isActive = tab === activeTab;
@@ -147,7 +147,7 @@ export default function HomeScreen() {
         })}
       </View>
 
-      {/* -------- PROJECT LIST -------- */}
+      {/*PROJECT LIST */}
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={Colors.primary} />
@@ -165,7 +165,9 @@ export default function HomeScreen() {
           renderItem={({ item }) => (
             <ProjectCard
               project={item}
-              expenses={allExpenses.filter((e: Expense) => e.projectId === item.id)}
+              expenses={allExpenses.filter(
+                (e: Expense) => e.projectId === item.id && !e.isDeleted
+              )}
             />
           )}
           contentContainerStyle={styles.listContent}
@@ -173,7 +175,7 @@ export default function HomeScreen() {
         />
       )}
 
-      {/* -------- BOTTOM TAB BAR -------- */}
+      {/* BOTTOM TAB BAR */}
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.bottomTab}>
           <Ionicons name="home" size={22} color={Colors.primary} />

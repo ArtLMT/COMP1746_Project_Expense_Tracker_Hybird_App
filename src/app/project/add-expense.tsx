@@ -17,6 +17,7 @@ import {
     Shadow,
     Spacing,
 } from '../../constants/theme';
+// saveExpense now uses setDoc and always writes is_deleted + updated_at
 import { saveExpense } from '../../services/expenseService';
 import type { ExpenseStore } from '../../services/expenseStore';
 import { useExpenseStore } from '../../services/expenseStore';
